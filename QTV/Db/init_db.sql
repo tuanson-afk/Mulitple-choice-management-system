@@ -1,0 +1,130 @@
+-- Bảng QTV
+CREATE TABLE QTV (
+    MaQTV VARCHAR(50) PRIMARY KEY,
+    MkQTV VARCHAR(512) NOT NULL,
+    TenQTV NVARCHAR(256) NOT NULL
+);
+
+-- Bảng GV
+CREATE TABLE GiangVien (
+    MaGV VARCHAR(50) PRIMARY KEY,
+    MkGV VARCHAR(512) NOT NULL,
+    TenGV NVARCHAR(256) NOT NULL,
+    MailGV VARCHAR(256) UNIQUE NOT NULL,
+    CONSTRAINT check_EmailGV CHECK (MailGV LIKE '%_@__%.__%')
+);
+
+-- Bảng SV
+CREATE TABLE SinhVien (
+    MaSV VARCHAR(50) PRIMARY KEY,
+    MkSV VARCHAR(512) NOT NULL,
+    TenSV NVARCHAR(256) NOT NULL,
+    MailSV VARCHAR(256) UNIQUE NOT NULL,
+    CONSTRAINT check_EmailSV CHECK (MailSV LIKE '%_@__%.__%')
+);
+
+-- Bảng môn học
+CREATE TABLE MonHoc (
+    MaMon VARCHAR(50) PRIMARY KEY,
+    TenMon NVARCHAR(256) NOT NULL
+);
+
+-- Bảng lớp HP
+CREATE TABLE LopHP (
+    MaLHP VARCHAR(50) PRIMARY KEY,
+    TenLHP NVARCHAR(256) NOT NULL,
+    MaGV VARCHAR(50) REFERENCES GiangVien(MaGV),
+    MaMon VARCHAR(50) REFERENCES MonHoc(MaMon)
+);
+
+-- Bảng ngân hàng câu hỏi
+CREATE TABLE NHCauHoi (
+    MaNHCauHoi VARCHAR(50) PRIMARY KEY,
+    TenNHCauHoi NVARCHAR(512) NOT NULL,
+    MaGV VARCHAR(50) REFERENCES GiangVien(MaGV),
+    MaMon VARCHAR(50) REFERENCES MonHoc(MaMon)
+);
+
+-- Bảng chương
+CREATE TABLE Chuong (
+    MaChuong VARCHAR(50) PRIMARY KEY,
+    TenChuong NVARCHAR(1024) NOT NULL,
+    MaMon VARCHAR(50) REFERENCES MonHoc(MaMon)
+);
+
+-- Bảng mức độ câu hỏi
+CREATE TABLE MucDo (
+    MaMucDo INT IDENTITY(1,1) PRIMARY KEY,
+    TenMucDo NVARCHAR(64) NOT NULL
+);
+
+-- Bảng câu hỏi
+CREATE TABLE CauHoi (
+    MaCauHoi VARCHAR(50) PRIMARY KEY,
+    NoiDung NVARCHAR(MAX) NOT NULL,
+    MaMon VARCHAR(50) REFERENCES MonHoc(MaMon),
+    Chuong VARCHAR(50) REFERENCES Chuong(MaChuong),
+    MucDo INT REFERENCES MucDo(MaMucDo)
+);
+
+-- Bảng quan hệ giữa ngân hàng câu hỏi và câu hỏi
+CREATE TABLE NH_CauHoi (
+    MaNHCauHoi VARCHAR(50),
+    MaCauHoi VARCHAR(50),
+    CONSTRAINT PK_NH_CauHoi PRIMARY KEY (MaNHCauHoi, MaCauHoi),
+    CONSTRAINT FK_NH_CauHoi_NHCauHoi FOREIGN KEY (MaNHCauHoi) REFERENCES NHCauHoi(MaNHCauHoi),
+    CONSTRAINT FK_NH_CauHoi_CauHoi FOREIGN KEY (MaCauHoi) REFERENCES CauHoi(MaCauHoi)
+);
+
+-- Bảng các phương án
+CREATE TABLE PhuongAn (
+    MaPhuongAn VARCHAR(50) PRIMARY KEY,
+    NoiDung NVARCHAR(MAX) NOT NULL,
+    MaCauHoi VARCHAR(50) REFERENCES CauHoi(MaCauHoi),
+    DungSai BIT DEFAULT 0
+);
+
+-- Bảng bài thi
+CREATE TABLE BaiThi (
+    MaBaiThi VARCHAR(50) PRIMARY KEY,
+    TenBaiThi NVARCHAR(512) NOT NULL,
+    MoTa NVARCHAR(MAX) NULL,
+    TGBatDau DATETIME NOT NULL,
+    TGKetThuc DATETIME NOT NULL,
+    ThoiLuong SMALLINT NOT NULL,
+    GV VARCHAR(50) REFERENCES GiangVien(MaGV),
+    LopHP VARCHAR(50) REFERENCES LopHP(MaLHP)
+);
+
+-- Bảng trạng thái bài thi
+CREATE TABLE TrangThai (
+    MaTrangThai VARCHAR(50) PRIMARY KEY,
+    TenTrangThai NVARCHAR(256) NOT NULL
+);
+
+-- Bảng bài làm sinh viên
+CREATE TABLE BaiLam (
+    MaBaiLam VARCHAR(50) PRIMARY KEY,
+    MaSV VARCHAR(50) REFERENCES SinhVien(MaSV),
+    MaBaiThi VARCHAR(50) REFERENCES BaiThi(MaBaiThi),
+    BatDau DATETIME DEFAULT GETDATE(),
+    KetThuc DATETIME,
+    TrangThai VARCHAR(50) REFERENCES TrangThai(MaTrangThai),
+    SoCauNop SMALLINT DEFAULT 0,
+    SoCauDung SMALLINT DEFAULT 0,
+    SoCauSai SMALLINT DEFAULT 0,
+    Diem FLOAT DEFAULT 0,
+    CONSTRAINT UQ_BaiLam UNIQUE (MaBaiThi, MaSV)
+);
+
+-- Bảng ChiTietBaiLam
+CREATE TABLE ChiTietBaiLam (
+    MaChiTiet VARCHAR(50) PRIMARY KEY,
+    MaBaiThi VARCHAR(50) REFERENCES BaiThi(MaBaiThi),
+    MaCauHoi VARCHAR(50) REFERENCES CauHoi(MaCauHoi),
+    MaSV VARCHAR(50) REFERENCES SinhVien(MaSV),
+    MaPhuongAnChon VARCHAR(50) REFERENCES PhuongAn(MaPhuongAn),
+    KetQua BIT,
+    TGTraLoi DATETIME DEFAULT GETDATE(),
+    CONSTRAINT UQ_ChiTietBaiLam UNIQUE (MaBaiThi, MaCauHoi, MaSV)
+);
